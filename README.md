@@ -1,1 +1,48 @@
 # insta-friends-only
+
+Makes instagram.com show only posts and stories from people you follow.
+
+- Opens the **Following** feed (`/?variant=following`), which lists only accounts you follow, newest first.
+- Removes the Reels tab and sends `/reels/` back to the feed.
+- Removes the Explore grid. On desktop the Explore link is hidden. On mobile, `/explore/` goes to the search page instead, because that link is the search tab there.
+- Hides sponsored posts, suggested posts, and "Suggested for you" account blocks.
+- Hides reels from friends too (you can turn this off, see below).
+- Stories aren't touched. The stories bar already shows only accounts you follow.
+
+It runs in your browser while you're logged in to instagram.com. There's no server, and it never sees your password.
+
+## Install
+
+**Chrome / Edge / Brave (desktop)**
+
+1. Open `chrome://extensions` and turn on **Developer mode**.
+2. Click **Load unpacked** and choose this folder.
+3. Reload instagram.com.
+
+**iPhone Safari**
+
+1. Install the free [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) app and turn it on under Safari → Extensions.
+2. Put `insta-friends-only.user.js` in the Userscripts folder.
+3. Open instagram.com in Safari.
+
+**Firefox / other browsers**
+
+Install Tampermonkey or Violentmonkey, then add `insta-friends-only.user.js` as a new script.
+
+## Settings
+
+Change `CONFIG` at the top of `insta-friends-only.user.js`:
+
+- `hideReelPosts`: set to `false` to keep reels your friends post.
+- `debug`: set to `true` to outline filtered items in red instead of hiding them. Use this to check what gets caught.
+
+## How it decides
+
+A feed post is hidden when any of these are true:
+
+- It's labelled "Sponsored" / "광고".
+- It's labelled "Suggested for you" / "Suggested posts" / "회원님을 위한 추천" / "추천 게시물".
+- It has a **Follow** / **팔로우** button, which means you don't follow the author.
+- It's a reel (only when `hideReelPosts` is on).
+
+Instagram changes its markup often. If something slips through or a friend's post goes missing, turn on `debug` and update the labels or selectors.

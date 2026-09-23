@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Insta Friends Only",
+  "version": "0.1.0",
+  "description": "Hide Reels, Explore, suggested and sponsored content on instagram.com. Keep posts and stories from people you follow.",
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["insta-friends-only.user.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
