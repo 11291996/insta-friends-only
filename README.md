@@ -20,11 +20,20 @@ It runs in your browser while you're logged in to instagram.com. There's no serv
 2. Click **Load unpacked** and choose this folder.
 3. Reload instagram.com.
 
+**Mac Safari**
+
+1. Install the free [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) app and choose this folder as its scripts folder.
+2. Turn on Userscripts in Safari → Settings → Extensions and allow it on `www.instagram.com`.
+3. Reload instagram.com.
+
 **iPhone Safari**
 
-1. Install the free [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) app and turn it on under Safari → Extensions.
-2. Put `insta-friends-only.user.js` in the Userscripts folder.
-3. Open instagram.com in Safari.
+1. Install the free [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) app.
+2. In the app, tap **Set Directory** and pick this folder. If your Mac Desktop syncs to iCloud, the folder is already on the phone under iCloud Drive → Desktop, and changes sync on their own.
+3. Turn on Userscripts in Settings → Apps → Safari → Extensions and allow it on `instagram.com`.
+4. Open instagram.com in Safari. If the script isn't listed in the Userscripts menu, open the file once in the Files app so iCloud downloads it.
+
+Safari extensions don't run in Home Screen web apps. To get a Home Screen icon, use Share → Add to Home Screen and turn **off** "Open as Web App" (iOS 26), or make a Shortcut that opens `https://www.instagram.com/` in Safari.
 
 **Firefox / other browsers**
 
