@@ -2,12 +2,13 @@
 
 Makes instagram.com show only posts and stories from people you follow.
 
-- Opens the **Following** feed (`/?variant=following`), which lists only accounts you follow, newest first.
+- Keeps the normal home feed so the stories bar stays, and hides every post that isn't from someone you follow.
 - Removes the Reels tab and sends `/reels/` back to the feed.
 - Removes the Explore grid. On desktop the Explore link is hidden. On mobile, `/explore/` goes to the search page instead, because that link is the search tab there.
 - Hides sponsored posts, suggested posts, and "Suggested for you" account blocks.
 - Hides reels from friends too (you can turn this off, see below).
 - Stories aren't touched. The stories bar already shows only accounts you follow.
+- Optional: `useFollowingFeed` sends home to Instagram's chronological Following feed (`/?variant=following`). That page has no stories bar.
 
 It runs in your browser while you're logged in to instagram.com. There's no server, and it never sees your password.
 
@@ -34,6 +35,7 @@ Install Tampermonkey or Violentmonkey, then add `insta-friends-only.user.js` as 
 Change `CONFIG` at the top of `insta-friends-only.user.js`:
 
 - `hideReelPosts`: set to `false` to keep reels your friends post.
+- `useFollowingFeed`: set to `true` for the chronological Following feed. You lose the stories bar.
 - `debug`: set to `true` to outline filtered items in red instead of hiding them. Use this to check what gets caught.
 
 ## How it decides

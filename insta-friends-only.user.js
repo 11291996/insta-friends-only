@@ -17,11 +17,14 @@
   const CONFIG = {
     // Hide reels in the feed even when a friend posted them. Set to false to keep friends' reels.
     hideReelPosts: true,
+    // Send the home page to Instagram's chronological Following feed. That page has no stories bar,
+    // so this is off by default: the normal home feed keeps stories and the filters below remove the rest.
+    useFollowingFeed: false,
     // Outline filtered items in red instead of removing them, to check what gets caught.
     debug: false,
   };
 
-  const FOLLOWING_FEED = '/?variant=following';
+  const HOME = CONFIG.useFollowingFeed ? '/?variant=following' : '/';
   const EXPLORE_REPLACEMENT = '/explore/search/';
 
   // Matched against the full text of short elements, so they must be exact.
@@ -38,15 +41,15 @@
       : '[data-ifo-hidden] { display: none !important; }'}
   `;
 
-  // ---- Routing: keep the user on the Following feed, off Reels and Explore ----
+  // ---- Routing: keep the user off Reels and Explore ----
 
   const REDIRECT_KEY = 'ifo-last-redirect';
 
   function targetFor(url) {
     const { pathname, searchParams } = url;
-    if (/^\/reels(\/|$)/.test(pathname)) return FOLLOWING_FEED;
+    if (/^\/reels(\/|$)/.test(pathname)) return HOME;
     if (pathname === '/explore/' || pathname === '/explore') return EXPLORE_REPLACEMENT;
-    if (pathname === '/' && searchParams.get('variant') !== 'following') return FOLLOWING_FEED;
+    if (CONFIG.useFollowingFeed && pathname === '/' && searchParams.get('variant') !== 'following') return HOME;
     return null;
   }
 
