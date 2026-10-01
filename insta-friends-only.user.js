@@ -132,6 +132,8 @@
       const text = label.textContent;
       if (text.length >= 40 || !SUGGESTED_LABELS.includes(text.trim())) continue;
       if (label.closest('article, [data-ifo-hidden]')) continue;
+      // The desktop notifications panel opens over the home page, outside <main>; leave it alone.
+      if (!label.closest('main, [role="main"]')) continue;
       // Climb to the smallest block that also holds Follow buttons, without swallowing the feed.
       for (let el = label.parentElement; el && el !== document.body; el = el.parentElement) {
         if (el.matches('main, [role="main"]') || el.querySelector('article')) break;
@@ -144,12 +146,12 @@
   }
 
   function sweep() {
-    // Only judge posts on the home feed; a Follow button is expected on a stranger's post you opened.
-    if (location.pathname === '/') {
-      // Re-check every time: Instagram recycles post elements as you scroll.
-      for (const article of document.querySelectorAll('article')) {
-        setHidden(article, classifyPost(article));
-      }
+    // Only filter the home feed. Elsewhere Follow buttons are normal: a stranger's post you opened,
+    // or "follow back" buttons in the notifications list.
+    if (location.pathname !== '/') return;
+    // Re-check every time: Instagram recycles post elements as you scroll.
+    for (const article of document.querySelectorAll('article')) {
+      setHidden(article, classifyPost(article));
     }
     hideSuggestionBlocks();
   }
