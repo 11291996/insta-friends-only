@@ -33,7 +33,8 @@
   const FOLLOW_LABELS = ['Follow', '팔로우'];
 
   const CSS = `
-    a[href="/reels/"] { display: none !important; }
+    /* The Reels tab link (it may carry a reel id on mobile) and the Reels tab on profiles. */
+    a[href^="/reels"], a[href$="/reels/"] { display: none !important; }
     /* On mobile the /explore/ link is the search tab, so only hide it on desktop. */
     @media (min-width: 768px) { a[href="/explore/"] { display: none !important; } }
     ${CONFIG.debug
@@ -114,7 +115,8 @@
     if (findExact(article, 'span, a', SUGGESTED_LABELS)) return 'suggested';
     // A Follow button on a feed post means you don't follow the author.
     if (findExact(article, 'button, div[role="button"]', FOLLOW_LABELS)) return 'not-following';
-    if (CONFIG.hideReelPosts && article.querySelector('a[href*="/reel/"]')) return 'reel';
+    // Mobile feed reels don't always link to /reel/, so treat any video post as a reel.
+    if (CONFIG.hideReelPosts && article.querySelector('a[href*="/reel/"], video')) return 'reel';
     return null;
   }
 

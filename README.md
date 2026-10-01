@@ -54,6 +54,6 @@ A feed post is hidden when any of these are true:
 - It's labelled "Sponsored" / "광고".
 - It's labelled "Suggested for you" / "Suggested posts" / "회원님을 위한 추천" / "추천 게시물".
 - It has a **Follow** / **팔로우** button, which means you don't follow the author.
-- It's a reel (only when `hideReelPosts` is on).
+- It's a reel or contains a video (only when `hideReelPosts` is on).
 
 Instagram changes its markup often. If something slips through or a friend's post goes missing, turn on `debug` and update the labels or selectors.
