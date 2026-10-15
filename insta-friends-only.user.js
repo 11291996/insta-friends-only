@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta Friends Only
 // @namespace    https://github.com/11291996/insta-friends-only
-// @version      0.1.0
+// @version      0.3.0
 // @description  Hide Reels, Explore, suggested and sponsored content on instagram.com. Keep posts and stories from people you follow.
 // @match        https://www.instagram.com/*
 // @run-at       document-start
@@ -44,7 +44,7 @@
 
   // ---- Routing: keep the user off Reels and Explore ----
 
-  const REDIRECT_KEY = 'ifo-last-redirect';
+  const REDIRECT_KEY = 'ifo-redirects';
 
   function targetFor(url) {
     const { pathname, searchParams } = url;
@@ -54,25 +54,45 @@
     return null;
   }
 
-  function go(target, fromHome) {
-    if (fromHome) {
-      // If Instagram rewrites /?variant=following back to /, stop instead of reloading forever.
-      try {
-        const last = Number(sessionStorage.getItem(REDIRECT_KEY) || 0);
-        if (Date.now() - last < 3000) return false;
-        sessionStorage.setItem(REDIRECT_KEY, String(Date.now()));
-      } catch {
+  // Each redirect is a full page load. If Instagram keeps sending us back to a blocked address
+  // (or rewrites /?variant=following to /), stop after two redirects in 10s and say which address did it.
+  function go(target, from) {
+    let recent;
+    try {
+      recent = JSON.parse(sessionStorage.getItem(REDIRECT_KEY) || '[]').filter((t) => Date.now() - t < 10000);
+      if (recent.length >= 2) {
+        showNotice(`Insta Friends Only: stopped a reload loop (${from} → ${target})`);
         return false;
       }
+      sessionStorage.setItem(REDIRECT_KEY, JSON.stringify([...recent, Date.now()]));
+    } catch {
+      return false;
     }
     location.replace(target);
     return true;
   }
 
+  let noticeShown = false;
+  function showNotice(text) {
+    if (noticeShown) return;
+    // The script starts before <body> exists, so wait for it.
+    if (!document.body) {
+      document.addEventListener('DOMContentLoaded', () => showNotice(text), { once: true });
+      return;
+    }
+    noticeShown = true;
+    const box = document.createElement('div');
+    box.textContent = text;
+    box.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom, 0px));'
+      + 'z-index:2147483647;padding:10px 12px;border-radius:10px;background:#c62828;color:#fff;'
+      + 'font:13px/1.4 -apple-system,system-ui,sans-serif;word-break:break-all;';
+    document.body.appendChild(box);
+    setTimeout(() => box.remove(), 10000);
+  }
+
   function route() {
-    const url = new URL(location.href);
-    const target = targetFor(url);
-    if (target) go(target, url.pathname === '/');
+    const target = targetFor(new URL(location.href));
+    if (target) go(target, location.pathname + location.search);
   }
 
   // Catch nav clicks before Instagram's router so Reels/Explore never render.
@@ -83,7 +103,7 @@
     const url = new URL(link.href, location.href);
     if (url.origin !== location.origin) return;
     const target = targetFor(url);
-    if (target && go(target, url.pathname === '/')) {
+    if (target && go(target, url.pathname + url.search)) {
       e.preventDefault();
       e.stopImmediatePropagation();
     }
@@ -115,18 +135,41 @@
     if (findExact(article, 'span, a', SUGGESTED_LABELS)) return 'suggested';
     // A Follow button on a feed post means you don't follow the author.
     if (findExact(article, 'button, div[role="button"]', FOLLOW_LABELS)) return 'not-following';
-    // Mobile feed reels don't always link to /reel/, so treat any video post as a reel.
-    if (CONFIG.hideReelPosts && article.querySelector('a[href*="/reel/"], video')) return 'reel';
+    if (CONFIG.hideReelPosts && article.querySelector('a[href*="/reel/"]')) return 'reel';
     return null;
   }
 
-  function setHidden(el, reason) {
-    if (reason) {
-      if (el.dataset.ifoHidden !== reason) el.dataset.ifoHidden = reason;
-    } else if (el.dataset.ifoHidden) {
-      delete el.dataset.ifoHidden;
+  // Once a post is hidden it stays hidden, and is remembered by its link for when Instagram re-creates it.
+  // Judge only by things that don't change while you look at a post (labels, Follow button, reel link),
+  // never by a <video>: Instagram adds and removes those as you scroll or swipe, which made posts flicker.
+  const hiddenPosts = new Map();
+
+  function postKey(article) {
+    for (const link of article.querySelectorAll('a[href*="/p/"], a[href*="/reel/"]')) {
+      const m = link.getAttribute('href').match(/\/(p|reel)\/([^/?#]+)/);
+      if (m) return m[2];
     }
+    return null;
   }
+
+  function judgePost(article) {
+    const prev = article.dataset.ifoHidden;
+    if (prev) return prev;
+    const key = postKey(article);
+    const cached = key && hiddenPosts.get(key);
+    if (cached) return cached;
+    const reason = classifyPost(article);
+    if (key && reason) hiddenPosts.set(key, reason);
+    return reason;
+  }
+
+  function setHidden(el, reason) {
+    if ((reason || null) === (el.dataset.ifoHidden || null)) return;
+    if (reason) el.dataset.ifoHidden = reason;
+    else delete el.dataset.ifoHidden;
+  }
+
+  const POST_CONTENT = 'article, video, a[href*="/p/"], a[href*="/reel/"]';
 
   // "Suggested for you" blocks outside posts: the desktop sidebar and in-feed account carousels.
   function hideSuggestionBlocks() {
@@ -137,8 +180,9 @@
       // The desktop notifications panel opens over the home page, outside <main>; leave it alone.
       if (!label.closest('main, [role="main"]')) continue;
       // Climb to the smallest block that also holds Follow buttons, without swallowing the feed.
+      // Posts aren't always <article>, so also stop at anything holding a post link or a video.
       for (let el = label.parentElement; el && el !== document.body; el = el.parentElement) {
-        if (el.matches('main, [role="main"]') || el.querySelector('article')) break;
+        if (el.matches('main, [role="main"]') || el.querySelector(POST_CONTENT)) break;
         if (findExact(el, 'button, div[role="button"]', FOLLOW_LABELS)) {
           setHidden(el, 'suggested-accounts');
           break;
@@ -151,9 +195,9 @@
     // Only filter the home feed. Elsewhere Follow buttons are normal: a stranger's post you opened,
     // or "follow back" buttons in the notifications list.
     if (location.pathname !== '/') return;
-    // Re-check every time: Instagram recycles post elements as you scroll.
+    // Check new posts as they load in.
     for (const article of document.querySelectorAll('article')) {
-      setHidden(article, classifyPost(article));
+      setHidden(article, judgePost(article));
     }
     hideSuggestionBlocks();
   }
